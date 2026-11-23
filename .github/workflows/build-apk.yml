@@ -1,0 +1,110 @@
+name: Build Al-Batros Accounts APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Ensure capacitor.config.json and www/index.html exist
+        run: |
+          mkdir -p www
+          if [ ! -f capacitor.config.json ]; then
+            cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.albatros.accounts",
+            "appName": "Al-Batros Accounts",
+            "webDir": "www",
+            "android": {
+              "allowMixedContent": true
+            }
+          }
+          EOF
+          fi
+
+          if [ ! -f www/index.html ]; then
+            if [ -f index.html ]; then
+              cp index.html www/index.html
+            elif [ -f albatros_accounts_v3.html ]; then
+              cp albatros_accounts_v3.html www/index.html
+            else
+              echo "Missing index.html in repository or www/index.html"
+              exit 1
+            fi
+          fi
+          ls -la www/
+
+      - name: Install dependencies
+        run: |
+          if [ ! -f package.json ]; then
+            cat << 'EOF' > package.json
+          {
+            "name": "al-batros-accounts",
+            "version": "1.0.0",
+            "private": true,
+            "dependencies": {
+              "@capacitor/android": "^6.1.2",
+              "@capacitor/cli": "^6.1.2",
+              "@capacitor/core": "^6.1.2"
+            }
+          }
+          EOF
+          fi
+          npm install
+
+      - name: Add Android platform
+        run: npx cap add android
+
+      - name: Configure Android permissions safely
+        run: |
+          python3 -c '
+          path = "android/app/src/main/AndroidManifest.xml"
+          with open(path, "r", encoding="utf-8") as f:
+              txt = f.read()
+          perms = [
+              "<uses-permission android:name=\"android.permission.BLUETOOTH\" />",
+              "<uses-permission android:name=\"android.permission.BLUETOOTH_ADMIN\" />",
+              "<uses-permission android:name=\"android.permission.BLUETOOTH_CONNECT\" />",
+              "<uses-permission android:name=\"android.permission.BLUETOOTH_SCAN\" />",
+          ]
+          anchor = "<uses-permission android:name=\"android.permission.INTERNET\" />"
+          if anchor in txt and perms[0] not in txt:
+              txt = txt.replace(anchor, anchor + "\n    " + "\n    ".join(perms), 1)
+          with open(path, "w", encoding="utf-8") as f:
+              f.write(txt)
+          print("Updated AndroidManifest.xml successfully")
+          '
+
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+
+      - name: Assemble Debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: Al-Batros-Accounts-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-other-than: never

@@ -1,7 +1,0 @@
-- name: Prepare www directory
-        run: |
-          mkdir -p www
-          if [ -f index.html ] && [ ! -f www/index.html ]; then
-            cp index.html www/index.html
-          fi
-          ls -la www/

@@ -1,0 +1,9 @@
+{
+  "appId": "com.albatros.accounts",
+  "appName": "Al-Batros Accounts",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true
+  }
+}

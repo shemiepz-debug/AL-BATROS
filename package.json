@@ -1,0 +1,14 @@
+{
+  "name": "al-batros-accounts",
+  "version": "1.0.0",
+  "description": "Al-Batros Group For Goods Transport Co. Accounting & Invoicing App",
+  "main": "www/index.html",
+  "scripts": {
+    "build": "echo 'Static web assets ready'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  }
+}
